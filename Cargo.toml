@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+clap = "4.5.34"
 config = { version = "0.15.11", features= ["yaml"]}
-dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }
+promptuity = "0.0.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_yml = "0.0.12"
+structopt = "0.3.26"
