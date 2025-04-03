@@ -1,31 +1,16 @@
-use std::process::Command;
-use config::Config;
-use serde::{Serialize, Deserialize};
+use std::vec;
+
 use structopt::StructOpt;
-use std::fs::File;
 
 use promptuity::prompts::{Select, SelectOption};
-use promptuity::themes::MinimalTheme;
-use promptuity::{Error, Promptuity, Term};
+use promptuity::themes::FancyTheme;
+use promptuity::{Promptuity, Term};
+
+mod tasks;
 
 mod cli;
-use cli::{CLI, BaseCommand};
+use cli::{CLI, BaseCommand, get_config};
 
-#[derive(Debug, Serialize, Deserialize)]
-struct AppConfig {
-    path: String
-}
-
-#[derive(Debug,Deserialize)]
-struct Task{
-    name: String,
-    steps: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Settings {
-    tasks: Vec<Task>,
-}
 
 fn main() {
 
@@ -33,96 +18,44 @@ fn main() {
     let config = get_config();
 
     let mut term = Term::default();
-    let mut theme = MinimalTheme::default();
+    let mut theme = FancyTheme::default();
     let mut p = Promptuity::new(&mut term, &mut theme);
 
+    p.with_intro("NRD").begin().expect("Failed to start prompt");
+
+
     match matches.command{
-        Some(command)=>{
+        Some(command)=>{    // Command line argument provided
             match command {
-                BaseCommand::Run { task } => {
-                    if let Some(task_name) = task {
-                        if let Some(selection) = config.tasks.iter().position(|x| x.name == task_name) {
-                            println!("Running task: {}", task_name);
-                            execute_command(&config.tasks[selection]);
-                        }else{
-                            println!("Task not found: {}", task_name);
-                        }
-                    } else {
-                        let tasks = config.tasks.iter().map(|x| x.name.clone()).collect::<Vec<String>>();
-
-                        p.begin().expect("Failed to start prompt");
-                        let selection = p.prompt(
-                            Select::new(
-                                "Choose task to run",
-                                tasks.iter().enumerate()
-                                    .map(|(i, x)| SelectOption::new(x.clone(), i))
-                                    .collect::<Vec<SelectOption<usize>>>(),
-                            )
-                            .as_mut(),
-                        ).expect("Failed to prompt for task");
-                        p.finish().expect("Failed to finish prompt");
-
-                        println!("Running task: {}", config.tasks[selection].name);
-                        execute_command(&config.tasks[selection]);
-                    }
-                }
-                BaseCommand::Serve { path } => {
-                    if let Some(p) = path {
-                        println!("Serving path: {}", p);
-                    }else{
-                        println!("No path specified.");
-                    }
-                }
+                BaseCommand::Run { task } => BaseCommand::run(task, &config, &mut p),  // Run command chosen
+                BaseCommand::Serve { path } => BaseCommand::serve(path, &mut p),    // Serve command chosen
             }
         }
-        None=>{
-            println!("No command provided.");
+        None=>{    // No command line argument provided
+            p.info("No command provided.").expect("Could not log");
+            // println!("No command provided.");
+
+            let commands = vec!["Run", "Serve"];
             
             // p.begin().expect("Failed to start prompt");
-            // let name = p.prompt(Input::new("Please enter your username").with_placeholder("username"))?;
+            let selection = p.prompt(
+                Select::new(
+                    "Choose command",
+                    commands.iter().enumerate()
+                        .map(|(i, x)| SelectOption::new(x, i))
+                        .collect::<Vec<SelectOption<usize>>>(),
+                )
+                .as_mut(),
+            ).expect("Failed to prompt for command");
             // p.finish().expect("Failed to finish prompt");
 
+            match selection {
+                0 => BaseCommand::run(None, &config, &mut p),  // Run command chosen
+                1 => BaseCommand::serve(None, &mut p),    // Serve command chosen
+                _ => {p.error("Invalid command selected.").expect("Could not log");},    // Invalid command
+            }
         }
+        
     }
-}
-
-fn execute_command(task: &Task){
-    let t = if cfg!(target_os = "windows"){
-        ["cmd","/C"]
-    }else{
-        ["sh","-c"]
-    };
-
-    let commands = &task.steps;
-    let to_exec = commands.join(" && ");
-
-    let command = Command::new(t[0])
-        .arg(t[1])
-        .arg(to_exec)
-        .status()
-        .expect("Failed to start interactive command");
-
-    if command.success() {
-        println!("Interactive session completed.");
-    } else {
-        println!("Interactive session failed with status: {}", command);
-    }
-}
-
-fn get_path_config()->AppConfig{
-    let settings = Config::builder()
-        .add_source(config::File::with_name("settings"))
-        .build()
-        .unwrap();
-
-    let conf = settings.try_deserialize::<AppConfig>().expect("Unable to load path file");
-    conf
-}
-fn get_config()->Settings{
-    let config = get_path_config();
-
-    let file = File::open(&config.path).expect("Failed to open the config file");
-
-    let conf: Settings = serde_yml::from_reader(file).expect("Error occured while parsing settings.");
-    conf
+    p.finish().expect("Failed to finish prompt");
 }
