@@ -149,6 +149,7 @@ pub fn get_path_config()->AppConfig{
                 Task {
                     name: "test".to_string(),
                     steps: vec!["echo Hello, World!".to_string()],
+                    arguments: None,
                 },
             ],
         };
