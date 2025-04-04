@@ -29,14 +29,14 @@ fn main() {
             match command {
                 BaseCommand::Run { task } => BaseCommand::run(task, &config, &mut p),  // Run command chosen
                 BaseCommand::Serve { path } => BaseCommand::serve(path, &mut p),    // Serve command chosen
-                BaseCommand::UpdateConfig { path } => {},    // Update config command chosen
+                BaseCommand::UpdateConfig { path } => BaseCommand::update_config(path, &mut p),    // Update config command chosen
             }
         }
         None=>{    // No command line argument provided
             p.info("No command provided.").expect("Could not log");
             // println!("No command provided.");
 
-            let commands = vec!["Run", "Serve"];
+            let commands = vec!["run", "serve", "update config file"];
             
             // p.begin().expect("Failed to start prompt");
             let selection = p.prompt(
@@ -53,6 +53,7 @@ fn main() {
             match selection {
                 0 => BaseCommand::run(None, &config, &mut p),  // Run command chosen
                 1 => BaseCommand::serve(None, &mut p),    // Serve command chosen
+                2 => BaseCommand::update_config(None, &mut p),    // Update config command chosen
                 _ => {p.error("Invalid command selected.").expect("Could not log");},    // Invalid command
             }
         }

@@ -2,8 +2,9 @@ use serde::{Serialize,Deserialize};
 use structopt::StructOpt;
 use std::fs::File;
 use std::io::Stderr;
+use std::path::Path;
 use promptuity::Promptuity;
-use promptuity::prompts::{Select, SelectOption};
+use promptuity::prompts::{Input, Select, SelectOption};
 
 use dirs::config_dir;
 
@@ -73,11 +74,55 @@ impl BaseCommand {
     }
     pub fn update_config(path: Option<String>, pr: &mut Promptuity<'_, Stderr>){
         if let Some(p) = path {
+
+            if !Path::new(&p).exists() {
+                pr.error(format!("Path does not exist: {}", p)).expect("Could not log");
+                return;
+            }
+
             pr.info(format!("Updating config path: {}", p)).expect("Could not log");
+
+            let base_dir_opt = config_dir();
+            let base_dir = match base_dir_opt{
+                Some(path) => path.join("nrd").join("config.yaml"),
+                None => panic!("Unable to load base directory"),
+            };
+
+            std::fs::write(&base_dir, format!("path: {}",Path::new(p.as_str()).display())).expect("Failed to create config file");
             
         }else{
-            pr.error("No path specified.").expect("Could not log");
+            pr.info("No path specified.").expect("Could not log");
+
+            let path = pr.prompt(
+                Input::new("Enter path to new config file: ")
+                    .with_hint("Enter entire path with /config.yaml")
+                    .with_validator(|v:&String| {
+                        if Path::new(v).exists() {
+                            Ok(())
+                        } else {
+                            Err("Path does not exist".to_string())
+                        }
+                    }),
+            );
+            let path = match path {
+                Ok(p) => p,
+                Err(e) => {
+                    pr.error(format!("Error: {}", e)).expect("Could not log");
+                    return;
+                }
+            };
+
+            pr.info(format!("Updating config path: {}", path)).expect("Could not log");
+
+            let base_dir_opt = config_dir();
+            let base_dir = match base_dir_opt{
+                Some(path) => path.join("nrd").join("config.yaml"),
+                None => panic!("Unable to load base directory"),
+            };
+
+            std::fs::write(&base_dir, format!("path: {}",Path::new(path.as_str()).display())).expect("Failed to create config file");
         }
+
     }  
 }
 
@@ -103,7 +148,7 @@ pub fn get_path_config()->AppConfig{
             tasks: vec![
                 Task {
                     name: "test".to_string(),
-                    steps: vec!["echo 'Hello, World!'".to_string()],
+                    steps: vec!["echo Hello, World!".to_string()],
                 },
             ],
         };
