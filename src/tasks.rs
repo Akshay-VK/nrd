@@ -1,11 +1,11 @@
 use std::io::Stderr;
 use std::process::Command;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use promptuity::Promptuity;
 use promptuity::prompts::{Select, SelectOption};
 
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug,Deserialize, Serialize)]
 pub struct Task{
     pub name: String,
     pub steps: Vec<String>,

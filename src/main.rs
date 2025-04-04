@@ -29,6 +29,7 @@ fn main() {
             match command {
                 BaseCommand::Run { task } => BaseCommand::run(task, &config, &mut p),  // Run command chosen
                 BaseCommand::Serve { path } => BaseCommand::serve(path, &mut p),    // Serve command chosen
+                BaseCommand::UpdateConfig { path } => {},    // Update config command chosen
             }
         }
         None=>{    // No command line argument provided
