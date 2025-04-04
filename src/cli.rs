@@ -1,13 +1,11 @@
 use serde::{Serialize,Deserialize};
 use structopt::StructOpt;
-use config::Config;
 use std::fs::File;
 use std::io::Stderr;
 use promptuity::Promptuity;
 use promptuity::prompts::{Select, SelectOption};
 
 use dirs::config_dir;
-use std::path::PathBuf;
 
 use crate::tasks::{Task, execute_command};
 
@@ -52,7 +50,6 @@ impl BaseCommand {
             let tasks = config.tasks.iter().map(|x| x.name.clone()).collect::<Vec<String>>();
     
             // Prompt user to select a task
-            // p.begin().expect("Failed to start prompt");
             let selection = p.prompt(
                 Select::new(
                     "Choose task to run",
@@ -62,7 +59,6 @@ impl BaseCommand {
                 )
                 .as_mut(),
             ).expect("Failed to prompt for task");
-            // p.finish().expect("Failed to finish prompt");
     
             execute_command(&config.tasks[selection],p);
         }
@@ -94,30 +90,27 @@ pub struct CLI{
 
 
 pub fn get_path_config()->AppConfig{
-    let base_dir = config_dir();
-    let base_dir = match base_dir {
+    let base_dir_opt = config_dir();
+    let base_dir = match base_dir_opt{
         Some(path) => path.join("nrd").join("config.yaml"),
         None => panic!("Unable to load base directory"),
     };
 
     if !base_dir.exists() {
-        // panic!("Config file does not exist at: {:?}", base_dir);
-        std::fs::create_dir_all(base_dir.parent().unwrap()).expect("Failed to create config nrd directory");
-        std::fs::write(&base_dir, "path: ./settings.yaml").expect("Failed to create config file");
+        std::fs::create_dir_all(base_dir.parent().unwrap()).expect("failed to create config nrd directory");
+        std::fs::write(&base_dir, format!("path: {}",base_dir.parent().unwrap().join("settings.yaml").display())).expect("Failed to create config file");
         let default_config = Settings {
-            tasks: vec![],
+            tasks: vec![
+                Task {
+                    name: "test".to_string(),
+                    steps: vec!["echo 'Hello, World!'".to_string()],
+                },
+            ],
         };
         std::fs::write(base_dir.parent().unwrap().join("settings.yaml"), serde_yml::to_string(&default_config).unwrap()).expect("Failed to create config file");
 
     }
 
-    // let settings = Config::builder()
-    //     .add_source(config::File::with_name("settings"))
-    //     .build()
-    //     .unwrap();
-
-    // let conf = settings.try_deserialize::<AppConfig>().expect("Unable to load path file");
-    // conf
     let file = File::open(&base_dir).expect("Failed to open the config file");
     let conf: AppConfig = serde_yml::from_reader(file).expect("Error occured while parsing settings.");
     conf
@@ -127,6 +120,7 @@ pub fn get_config()->Settings{
 
     let file = File::open(&config.path).expect(format!("Failed to open the config file: {}", config.path).as_str());
 
+    println!("Config file path: {}", config.path);
     let conf: Settings = serde_yml::from_reader(file).expect("Error occured while parsing settings.");
     conf
 }
