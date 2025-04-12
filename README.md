@@ -1,12 +1,17 @@
 # NRD
 
-A simple CLI where you can make **your own subcommands** (with parameters) to execute shell commands.
-You can use this to make the entire process of generating some project and adding libraries into a **single** command. 
+A CLI automation tool to automate repetitive tasks and keep handy tools in one place. All written in Rust.
 
-## Working
+## Features
 
-- All commands are stored in a config JSON file.
-- You can add subcommands to it and specify arguments and use it throughout
-- You can add steps in it which are shell commands
-- This will automatically reflect when you run the app in the terminal.
-- You can specify subcommands also and nest these commands in any way.
+- Runnable and customizable tasks with arguments to run shell commands as a sequence using one command
+- Custom config YAML files to add tasks
+- Beautiful prompts and infor messages using **promptuity**
+
+## On the way
+
+- Quick server to serve static html or a folder in general
+- A way to edit files in tasks instead of being restricted to shell commands
+- A mock API for testing random projects
+- A TUI
+- A fast file explorer (must be faster than Windows File Explorer)
