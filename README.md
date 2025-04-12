@@ -6,7 +6,7 @@ A CLI automation tool to automate repetitive tasks and keep handy tools in one p
 
 - Runnable and customizable tasks with arguments to run shell commands as a sequence using one command
 - Custom config YAML files to add tasks
-- Beautiful prompts and infor messages using **promptuity**
+- Beautiful prompts and info messages using **promptuity**
 
 ## On the way
 
